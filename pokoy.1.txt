@@ -1,0 +1,107 @@
+:man source:   pokoy
+:man version:  {revnumber}
+:man manual:   pokoy manual
+
+pokoy(1)
+========
+
+Name
+----
+
+pokoy - Lightweight daemon that helps prevent RSI and other computer related stress
+
+Synopsis
+--------
+
+*pokoy* [*-hvnkd*] [*-c* 'CONFIG_PATH']
+
+
+Description
+-----------
+
+*pokoy* is a simple daemon for X. It locks the screen and forces you to take regular breaks.
+
+
+Options
+-------
+
+If daemon is running, you can run 'pokoy' without options to see remaining time.
+
+*-h*::
+	Print the synopsis and exit.
+
+*-v*::
+	Print the version and exit.
+
+*-n*::
+	Take break now.
+
+*-k*::
+	Kill daemon.
+
+*-d*::
+	Be verbose and print debug information to syslog.
+
+*-c* 'CONFIG_PATH'::
+	Use the given configuration file.
+
+Configuration
+-------------
+
+The default configuration file is '$XDG_CONFIG_HOME/pokoy/pokoyrc'.
+
+An example configuration file is included, usually at /usr/share/pokoy/pokoyrc.
+
+Configuration options
+---------------------
+
+Blank lines are ignored. 
+Lines beginning with a hash mark ('#') are comments, and ignored. 
+
+%M are minutes (00..59). %S are seconds (00..59).
+
+
+*show_bar* <true/false>::
+	Show progress bar. +
+	Default: 'true'
+
+*show_timer* <true/false>::
+	Show timer. +
+	Default: 'true'
+
+*enable_skip* <true/false>::
+	If set to true, user can press 's' to skip break. +
+	Default: 'true'
+
+*enable_postpone* <true/false>::
+	If set to true, user can press 'p' to postpone break. +
+	Default: 'true'
+
+*idle_time* <%M:%S>::
+	If there is no user input for '<idle_time>', the daemon will sleep until user came back. +
+	Default: '10:00'
+
+*font* <font_name>::
+	X11 font. For example: '-\*-terminus-\*-\*-\*-\*-32-\*-\*-\*-\*-\*-\*-*'.
+	Use xfontsel to choose a font. +
+	Default: 'fixed'
+
+*block* <class_name>::
+	If window with '<class_name>' is focused, break will be skipped.
+	For example, if you add 'block Mplayer', there will be no breaks until mplayer has focus. +
+	Default: (none)
+
+*break* <time_between_breaks> <break_duration> <postpone_time>::
+	Add break. If postpone time is '00:00', break cannot be postponed. +
+	Default: (none)
+	
+
+Author
+------
+
+ttygde <u at airmail.cc>
+
+Homepage
+--------
+
+https://github.com/ttygde/pokoy

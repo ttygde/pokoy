@@ -1,0 +1,14 @@
+# pocoy config file
+
+#show_bar			true
+#show_timer			true
+#enable_skip		true
+#enable_postpone	true
+#idle_time			10:00
+
+##font				-*-terminus-*-*-*-*-32-*-*-*-*-*-*-*
+##block				MPlayer
+
+#					tbb		du		pt
+break				35:00	5:00	2:00	
+break				5:00	0:10	0:00	

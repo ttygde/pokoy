@@ -1,0 +1,158 @@
+'\" t
+.\"     Title: pokoy
+.\"    Author: [see the "Author" section]
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 10/13/2014
+.\"    Manual: pokoy manual
+.\"    Source: pokoy 0.1
+.\"  Language: English
+.\"
+.TH "POKOY" "1" "10/13/2014" "pokoy 0\&.1" "pokoy manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+pokoy \- Lightweight daemon that helps prevent RSI and other computer related stress
+.SH "SYNOPSIS"
+.sp
+\fBpokoy\fR [\fB\-hvnkd\fR] [\fB\-c\fR \fICONFIG_PATH\fR]
+.SH "DESCRIPTION"
+.sp
+\fBpokoy\fR is a simple daemon for X\&. It locks the screen and forces you to take regular breaks\&.
+.SH "OPTIONS"
+.sp
+If daemon is running, you can run \fIpokoy\fR without options to see remaining time\&.
+.PP
+\fB\-h\fR
+.RS 4
+Print the synopsis and exit\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Print the version and exit\&.
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Take break now\&.
+.RE
+.PP
+\fB\-k\fR
+.RS 4
+Kill daemon\&.
+.RE
+.PP
+\fB\-d\fR
+.RS 4
+Be verbose and print debug information to syslog\&.
+.RE
+.PP
+\fB\-c\fR \fICONFIG_PATH\fR
+.RS 4
+Use the given configuration file\&.
+.RE
+.SH "CONFIGURATION"
+.sp
+The default configuration file is \fI$XDG_CONFIG_HOME/pokoy/pokoyrc\fR\&.
+.sp
+An example configuration file is included, usually at /usr/share/pokoy/pokoyrc\&.
+.SH "CONFIGURATION OPTIONS"
+.sp
+Blank lines are ignored\&. Lines beginning with a hash mark (\fI#\fR) are comments, and ignored\&.
+.sp
+%M are minutes (00\&.\&.59)\&. %S are seconds (00\&.\&.59)\&.
+.PP
+\fBshow_bar\fR <true/false>
+.RS 4
+Show progress bar\&.
+
+Default:
+\fItrue\fR
+.RE
+.PP
+\fBshow_timer\fR <true/false>
+.RS 4
+Show timer\&.
+
+Default:
+\fItrue\fR
+.RE
+.PP
+\fBenable_skip\fR <true/false>
+.RS 4
+If set to true, user can press
+\fIs\fR
+to skip break\&.
+
+Default:
+\fItrue\fR
+.RE
+.PP
+\fBenable_postpone\fR <true/false>
+.RS 4
+If set to true, user can press
+\fIp\fR
+to postpone break\&.
+
+Default:
+\fItrue\fR
+.RE
+.PP
+\fBidle_time\fR <%M:%S>
+.RS 4
+If there is no user input for
+\fI<idle_time>\fR, the daemon will sleep until user came back\&.
+
+Default:
+\fI10:00\fR
+.RE
+.PP
+\fBfont\fR <font_name>
+.RS 4
+X11 font\&. For example:
+\fI\-*\-terminus\-*\-*\-*\-*\-32\-*\-*\-*\-*\-*\-*\-*\fR\&. Use xfontsel to choose a font\&.
+
+Default:
+\fIfixed\fR
+.RE
+.PP
+\fBblock\fR <class_name>
+.RS 4
+If window with
+\fI<class_name>\fR
+is focused, break will be skipped\&. For example, if you add
+\fIblock Mplayer\fR, there will be no breaks until mplayer has focus\&.
+
+Default: (none)
+.RE
+.PP
+\fBbreak\fR <time_between_breaks> <break_duration> <postpone_time>
+.RS 4
+Add break\&. If postpone time is
+\fI00:00\fR, break cannot be postponed\&.
+
+Default: (none)
+.RE
+.SH "AUTHOR"
+.sp
+ttygde <u at airmail\&.cc>
+.SH "HOMEPAGE"
+.sp
+https://github\&.com/ttygde/pokoy
