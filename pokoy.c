@@ -40,7 +40,7 @@
 
 
 typedef struct {
-	uint32_t		it;  //intermediate time
+	uint32_t		tbb;  // time between breaks
 	uint32_t		du;  // duration
 	uint32_t		pt;  // postpone time
 	time_t			rt;  // remaining time 
@@ -110,8 +110,8 @@ im_daemon() {
 	uint32_t i, j;
 	for (ever) {
 		for (i = 0; i < number_of_breaks; i++) {
-			syslog(LOG_DEBUG, "time(0): %d, rt: %d, it: %d, d: %d, pt: %d\n", 
-					(int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->it, cbreaks[i]->du, cbreaks[i]->pt);
+			syslog(LOG_DEBUG, "time(0): %d, rt: %d, tbb: %d, d: %d, pt: %d\n", 
+					(int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->tbb, cbreaks[i]->du, cbreaks[i]->pt);
 			if (difftime(cbreaks[i]->rt, time(0)) <= 0) {
 				if (nb > 0) { // if there is something in blacklist
 					ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
@@ -122,7 +122,7 @@ im_daemon() {
 						for (j = 0; j < nb; j++) {
 							if ((strcmp(blacklist[j], t.class_name)) == 0) {
 								flags |= FLAG_BLOCK;
-								cbreaks[i]->rt += cbreaks[i]->it / 2;
+								cbreaks[i]->rt += cbreaks[i]->tbb / 2;
 								syslog(LOG_DEBUG, "%s has focus. Skipping.", t.class_name);
 								break;
 							} 
@@ -139,7 +139,7 @@ im_daemon() {
 						if (j == i) continue;
 						syslog(LOG_DEBUG, "Correction.");
 						if (difftime(cbreaks[j]->rt - ONE_MINUTE, time(0)) <= 0) {
-							postpone_time = cbreaks[j]->it / 5;
+							postpone_time = cbreaks[j]->tbb / 5;
 							while (cbreaks[j]->rt < (time(0) + postpone_time))
 								cbreaks[j]->rt += postpone_time;
 						}
@@ -154,7 +154,7 @@ im_daemon() {
 						sleep(30);
 					}
 					for (j = 0; j < number_of_breaks; j++) {
-						cbreaks[j]->rt = time(0) + cbreaks[j]->it;
+						cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
 					}
 					syslog(LOG_DEBUG, "Awakening.");
 				}
@@ -220,10 +220,10 @@ load_config() {
 
 		if (strcmp(k, "break") == 0) {
 			cbreak *cb = malloc(sizeof(cbreak));
-			cb->it = atoi(p) * 60 + atoi(strtok(NULL, " \t:"));
+			cb->tbb = atoi(p) * 60 + atoi(strtok(NULL, " \t:"));
 			cb->du = atoi(strtok(NULL, " \t:")) * 60 + atoi(strtok(NULL, " \t:"));
 			cb->pt = atoi(strtok(NULL, " \t:")) * 60 + atoi(strtok(NULL, " \t:"));
-			cb->rt = time(0) + cb->it;
+			cb->rt = time(0) + cb->tbb;
 			cbreaks[number_of_breaks] = cb;
 			number_of_breaks++;
 		} else if (strcmp(k, "show_bar") == 0) {
@@ -313,7 +313,7 @@ init_x_context() {
 	xcb_create_gc(xc.c, xc.g, xc.s->root, mask, values);
 	xcb_close_font(xc.c, font_id);
 
-	/*[> Allocate key symboll <]*/
+	// Allocate key symbols
 	xc.symbols = xcb_key_symbols_alloc(xc.c);
 	free(font);
 }
@@ -363,7 +363,6 @@ uint32_t
 get_ntext_width(const xcb_char2b_t *wstr, size_t n) {
 	if (wstr == NULL || n == 0)
 		return 0;
-	/* Query about text width */
 	xcb_query_text_extents_cookie_t cookie = xcb_query_text_extents(xc.c, xc.g, n, wstr);
 	xcb_query_text_extents_reply_t *r = xcb_query_text_extents_reply(xc.c, cookie, NULL);
 	if (r == NULL) {
@@ -391,7 +390,6 @@ get_ntext8_width(const char *str, size_t n) {
 
 void
 create_cb(cbreak *cb) {
-	/*pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);*/
 	xcb_generic_event_t *e;
 	xcb_window_t w;
 	char bar[] = "[--------------------------------------------------]"; // 50 symbols + 2 brackets
@@ -402,7 +400,6 @@ create_cb(cbreak *cb) {
 		{ .fd = xcb_get_file_descriptor(xc.c), .events = POLLIN }
 	};
 
-	/* create window */
 	mask = XCB_CW_BACK_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK;
 	values[0] = xc.s->black_pixel;
 	values[1] = 1;
@@ -434,7 +431,7 @@ create_cb(cbreak *cb) {
 
 	double step_for_second = (double)NUMBER_OF_HASH_SYMBOLS / cb->du;
 	
-	double i = 0; //step_energy
+	double i = 0; // step_energy
 	uint8_t min = 0, sec = 0;
 	uint8_t number_of_steps = 0;
 	uint32_t now = time(0);
@@ -489,9 +486,8 @@ create_cb(cbreak *cb) {
 				usleep(100000); // just to show that bar is complete
 				xcb_destroy_window(xc.c, w);
 				xcb_flush(xc.c);
-				cb->rt = time(0) + cb->it;
+				cb->rt = time(0) + cb->tbb;
 				return;
-				/*pthread_exit(0);*/
 			}
 		}
 
@@ -510,7 +506,7 @@ create_cb(cbreak *cb) {
 									if (flags & FLAG_ENABLE_SKIP) {
 										xcb_destroy_window(xc.c, w);
 										xcb_flush(xc.c);
-										cb->rt = time(0) + cb->it;
+										cb->rt = time(0) + cb->tbb;
 										return;
 									}
 								// postpone
@@ -554,7 +550,6 @@ main (int argc, char **argv) {
 		if (runtime_path_dir == NULL || ((fp = fopen(runtime_path_file, "a+")) == NULL))
 			err(1, "Cannot open file %s", runtime_path_file);
 	} 
-	/*free(runtime_path_file);*/
 
 	pid_t pid = 0;
 	if(flock(fileno(fp), LOCK_SH | LOCK_NB)) {
