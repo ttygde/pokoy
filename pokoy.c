@@ -131,7 +131,7 @@ im_daemon() {
 					}
 					free(ifr);
 				}
-				if (flags ^ FLAG_BLOCK) {
+				if (flags & FLAG_BLOCK) {
 					cbreaks[i]->rt = INT_MAX;
 					create_cb(cbreaks[i]);
 					// check other breaks and postpone them
@@ -161,7 +161,6 @@ im_daemon() {
 				idle_counter = 0;
 			} else idle_counter++;
 		}
-		syslog (LOG_DEBUG, "--");
 		if (now) {
 			create_cb(cbreaks[0]);
 			now = 0;	
@@ -173,6 +172,7 @@ im_daemon() {
 			fflush(fp);
 			show = 0;
 		}
+		syslog (LOG_DEBUG, "--");
 		sleep(1);
 	}
 	return 0;
@@ -416,14 +416,14 @@ create_cb(cbreak *cb) {
 	xcb_set_input_focus(xc.c, XCB_INPUT_FOCUS_FOLLOW_KEYBOARD, w, XCB_CURRENT_TIME);
 	xcb_grab_keyboard(xc.c, 0, w, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 
-	if (flags ^ FLAG_BAR && width_bar == 0) {
+	if (((flags & FLAG_BAR) == 0) && (width_bar == 0)) {
 		width_bar = get_ntext8_width(bar, strlen(bar));
 		bar_x = (xc.s->width_in_pixels / 2) - (width_bar / 2);
 		bar_y = xc.s->height_in_pixels / 1.5;
 	}
 
 	char timer[6] = "00:00";
-	if (flags ^ FLAG_TIMER && width_timer == 0) {
+	if (((flags & FLAG_TIMER) == 0) && (width_timer == 0)) {
 		width_timer = get_ntext8_width(timer, 5);
 		timer_x = (xc.s->width_in_pixels / 2) - (width_timer / 2);
 		timer_y = xc.s->height_in_pixels / 2;
@@ -436,9 +436,10 @@ create_cb(cbreak *cb) {
 	uint8_t number_of_steps = 0;
 	uint32_t now = time(0);
 
-	if (flags & FLAG_BAR == 0) 
+	if ((flags & FLAG_BAR) == 0) {
 		xcb_image_text_8(xc.c, NUMBER_OF_HASH_SYMBOLS + 2, w, xc.g, bar_x, bar_y, bar);
-	if (flags & FLAG_TIMER == 0) {
+	}
+	if ((flags & FLAG_TIMER) == 0) {
 		sprintf(timer,   "%02d", min);
 		sprintf(timer+3, "%02d", sec);
 		memcpy(timer+2, ":", 1);
@@ -463,10 +464,10 @@ create_cb(cbreak *cb) {
 				i--;
 			}
 
-			syslog(LOG_DEBUG, "flags %d", flags);
-			if (flags & FLAG_BAR == 0) 
+			if ((flags & FLAG_BAR) == 0) {
 				xcb_image_text_8(xc.c, NUMBER_OF_HASH_SYMBOLS + 2, w, xc.g, bar_x, bar_y, bar);
-			if (flags & FLAG_TIMER == 0) {
+			}
+			if ((flags & FLAG_TIMER) == 0) {
 				sprintf(timer,   "%02d", min);
 				sprintf(timer+3, "%02d", sec);
 				memcpy(timer+2, ":", 1);
@@ -475,7 +476,7 @@ create_cb(cbreak *cb) {
 			xcb_flush(xc.c);
 
 			if (min * 60 + sec >= cb->du) {
-				if (flags & FLAG_BAR == 0) {
+				if ((flags & FLAG_BAR) == 0) {
 					while (number_of_steps < NUMBER_OF_HASH_SYMBOLS) {
 						memcpy(bar + number_of_steps + 1, "#", 1);
 						number_of_steps++;
