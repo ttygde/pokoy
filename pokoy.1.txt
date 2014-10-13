@@ -82,7 +82,7 @@ Lines beginning with a hash mark ('#') are comments, and ignored.
 	Default: '10:00'
 
 *font* <font_name>::
-	X11 font. For example: '-\*-terminus-\*-\*-\*-\*-32-\*-\*-\*-\*-\*-\*-*'.
+	X11 font. For example: '`-*-terminus-*-*-*-*-32-*-*-*-*-*-*-*`'.
 	Use xfontsel to choose a font. +
 	Default: 'fixed'
 
