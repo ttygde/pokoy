@@ -1,3 +1,4 @@
+VERSION		= 0.1
 CC          ?= gcc
 STRIP		?= strip
 CFLAGS      = -std=gnu11 -O2
@@ -32,6 +33,6 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/share/man/man1/pokoy.1
 
 doc:
-	a2x -d manpage -f manpage -a revnumber=0.1 pokoy.1.txt
+	a2x -d manpage -f manpage -a revnumber=${VERSION} pokoy.1.txt
 
 .PHONY: all clean install
