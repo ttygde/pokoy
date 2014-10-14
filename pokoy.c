@@ -131,7 +131,7 @@ im_daemon() {
 					}
 					free(ifr);
 				}
-				if (flags & FLAG_BLOCK) {
+				if ((flags & FLAG_BLOCK) == 0) {
 					cbreaks[i]->rt = INT_MAX;
 					create_cb(cbreaks[i]);
 					// check other breaks and postpone them
@@ -262,6 +262,7 @@ init_daemon() {
 
 	umask(0);
 	setsid();
+	chdir("/");	
 	close(STDIN_FILENO);
 	close(STDOUT_FILENO);
 	close(STDERR_FILENO);

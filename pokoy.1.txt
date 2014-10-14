@@ -25,7 +25,7 @@ Description
 Options
 -------
 
-If daemon is running, you can run 'pokoy' without options to see remaining time.
+When daemon is running, you can run 'pokoy' without options to see remaining time.
 
 *-h*::
 	Print the synopsis and exit.
