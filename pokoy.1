@@ -77,7 +77,7 @@ An example configuration file is included, usually at /usr/share/pokoy/pokoyrc\&
 .sp
 Blank lines are ignored\&. Lines beginning with a hash mark (\fI#\fR) are comments, and ignored\&.
 .sp
-%M are minutes (00\&.\&.59)\&. %S are seconds (00\&.\&.59)\&.
+%M is minutes (00\&.\&.59)\&. %S is seconds (00\&.\&.59)\&.
 .PP
 \fBshow_bar\fR <true/false>
 .RS 4
@@ -145,7 +145,7 @@ Default: (none)
 .PP
 \fBbreak\fR <time_between_breaks> <break_duration> <postpone_time>
 .RS 4
-Add break\&. If postpone time is
+Add break\&. All values have <%M:%S> form\&. If postpone time is
 \fI00:00\fR, break cannot be postponed\&.
 
 Default: (none)

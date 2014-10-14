@@ -58,7 +58,7 @@ Configuration options
 Blank lines are ignored. 
 Lines beginning with a hash mark ('#') are comments, and ignored. 
 
-%M are minutes (00..59). %S are seconds (00..59).
+%M is minutes (00..59). %S is seconds (00..59).
 
 
 *show_bar* <true/false>::
@@ -92,7 +92,7 @@ Lines beginning with a hash mark ('#') are comments, and ignored.
 	Default: (none)
 
 *break* <time_between_breaks> <break_duration> <postpone_time>::
-	Add break. If postpone time is '00:00', break cannot be postponed. +
+	Add break. All values have <%M:%S> form. If postpone time is '00:00', break cannot be postponed. +
 	Default: (none)
 	
 
