@@ -511,6 +511,7 @@ create_cb(cbreak *cb) {
 										cb->rt = time(0) + cb->tbb;
 										return;
 									}
+									break;
 								// postpone
 								case XK_p:
 									if (flags & FLAG_ENABLE_POSTPONE && cb->pt != 0) {
@@ -519,6 +520,7 @@ create_cb(cbreak *cb) {
 										cb->rt = time(0) + cb->pt; // add postpone time to remaining time
 										return;
 									}
+									break;
 								default:
 									break;
 							}
