@@ -196,7 +196,7 @@ is_idle() {
 void
 load_config() {
 	flags |= FLAG_ENABLE_POSTPONE | FLAG_ENABLE_SKIP;
-	idle_time = 600;
+	idle_time = 10 * ONE_MINUTE;
 	if (config_path[0] == '\0') {
 		char *config_home = getenv(CONFIG_HOME_ENV);
 		if (config_home != NULL)
@@ -207,7 +207,28 @@ load_config() {
 
 	FILE *cfg = fopen(config_path, "r");
 	if (cfg == NULL) {
-		err(1, "Can't open configuration file: '%s'", config_path);	
+		warn("WARNING. Can't open configuration file: '%s'", config_path);	
+		warnx("Using defaults.");	
+		free(config_path);
+
+		// first default break
+		cbreak *cb = malloc(sizeof(cbreak));
+		cb->tbb = 35 * ONE_MINUTE;
+		cb->du = 5 * ONE_MINUTE;
+		cb->pt = 2 * ONE_MINUTE;
+		cb->rt = time(0) + cb->tbb;
+		cbreaks[number_of_breaks] = cb;
+		number_of_breaks++;
+		// second default break
+		cb = malloc(sizeof(cbreak));
+		cb->tbb = 5 * ONE_MINUTE;
+		cb->du = 10;
+		cb->pt = 0;
+		cb->rt = time(0) + cb->tbb;
+		cbreaks[number_of_breaks] = cb;
+		number_of_breaks++;
+
+		return;
 	}
 	char *buf = malloc(200);
 	char first;
@@ -220,9 +241,9 @@ load_config() {
 
 		if (strcmp(k, "break") == 0) {
 			cbreak *cb = malloc(sizeof(cbreak));
-			cb->tbb = atoi(p) * 60 + atoi(strtok(NULL, " \t:"));
-			cb->du = atoi(strtok(NULL, " \t:")) * 60 + atoi(strtok(NULL, " \t:"));
-			cb->pt = atoi(strtok(NULL, " \t:")) * 60 + atoi(strtok(NULL, " \t:"));
+			cb->tbb = atoi(p) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
+			cb->du = atoi(strtok(NULL, " \t:")) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
+			cb->pt = atoi(strtok(NULL, " \t:")) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
 			cb->rt = time(0) + cb->tbb;
 			cbreaks[number_of_breaks] = cb;
 			number_of_breaks++;
@@ -242,7 +263,7 @@ load_config() {
 			blacklist[nb] = block;
 			nb++;
 		} else if (strcmp(k, "idle_time") == 0) {
-			idle_time = atoi(p) * 60 + atoi(strtok(NULL, " \t:"));
+			idle_time = atoi(p) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
 		}
 	}
 	fclose(cfg);
@@ -476,7 +497,7 @@ create_cb(cbreak *cb) {
 			}
 			xcb_flush(xc.c);
 
-			if (min * 60 + sec >= cb->du) {
+			if (min * ONE_MINUTE + sec >= cb->du) {
 				if ((flags & FLAG_BAR) == 0) {
 					while (number_of_steps < NUMBER_OF_HASH_SYMBOLS) {
 						memcpy(bar + number_of_steps + 1, "#", 1);

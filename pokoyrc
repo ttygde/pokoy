@@ -1,14 +1,17 @@
 # pocoy config file
 
+# Default settings. Uncomment to change.
+
 #show_bar			true
 #show_timer			true
 #enable_skip		true
 #enable_postpone	true
 #idle_time			10:00
 
-##font				-*-terminus-*-*-*-*-32-*-*-*-*-*-*-*
-##block				MPlayer
+#break				35:00	5:00	2:00	
+#break				5:00	0:10	0:00	
 
-#					tbb		du		pt
-break				35:00	5:00	2:00	
-break				5:00	0:10	0:00	
+# Example settings. They are not default.
+
+#font				-*-terminus-*-*-*-*-32-*-*-*-*-*-*-*
+#block				MPlayer
