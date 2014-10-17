@@ -85,7 +85,7 @@ uint8_t is_idle();
 
 
 static uint8_t
-im_daemon() {
+pokoy() {
 	xcb_get_input_focus_reply_t *ifr;
 	xcb_icccm_get_wm_class_reply_t t;
 	xcb_get_property_cookie_t c;
@@ -193,7 +193,7 @@ is_idle() {
 }
 
 
-void add_defaults_breaks() {
+void add_default_breaks() {
 	// first default break
 	cbreak *cb = malloc(sizeof(cbreak));
 	cb->tbb = 35 * ONE_MINUTE;
@@ -230,7 +230,7 @@ load_config() {
 		warn("WARNING. Can't open configuration file: '%s'", config_path);	
 		warnx("Using defaults.");	
 		free(config_path);
-		add_defaults_breaks();
+		add_default_breaks();
 		return;
 	}
 	char *buf = malloc(200);
@@ -270,7 +270,7 @@ load_config() {
 		}
 	}
 	if (number_of_breaks == 0) {
-		add_defaults_breaks();
+		add_default_breaks();
 	}
 	fclose(cfg);
 	free(buf);
@@ -639,7 +639,7 @@ main (int argc, char **argv) {
 			case 0: {
 				fp = fopen(runtime_path_file, "w+");
 				free(runtime_path_file);
-				status = im_daemon();
+				status = pokoy();
 				exit(status);
 			}
 			default:
