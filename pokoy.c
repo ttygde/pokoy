@@ -193,6 +193,26 @@ is_idle() {
 }
 
 
+void add_defaults_breaks() {
+	// first default break
+	cbreak *cb = malloc(sizeof(cbreak));
+	cb->tbb = 35 * ONE_MINUTE;
+	cb->du = 5 * ONE_MINUTE;
+	cb->pt = 2 * ONE_MINUTE;
+	cb->rt = time(0) + cb->tbb;
+	cbreaks[number_of_breaks] = cb;
+	number_of_breaks++;
+	// second default break
+	cb = malloc(sizeof(cbreak));
+	cb->tbb = 5 * ONE_MINUTE;
+	cb->du = 10;
+	cb->pt = 0;
+	cb->rt = time(0) + cb->tbb;
+	cbreaks[number_of_breaks] = cb;
+	number_of_breaks++;
+}
+
+
 void
 load_config() {
 	flags |= FLAG_ENABLE_POSTPONE | FLAG_ENABLE_SKIP;
@@ -210,24 +230,7 @@ load_config() {
 		warn("WARNING. Can't open configuration file: '%s'", config_path);	
 		warnx("Using defaults.");	
 		free(config_path);
-
-		// first default break
-		cbreak *cb = malloc(sizeof(cbreak));
-		cb->tbb = 35 * ONE_MINUTE;
-		cb->du = 5 * ONE_MINUTE;
-		cb->pt = 2 * ONE_MINUTE;
-		cb->rt = time(0) + cb->tbb;
-		cbreaks[number_of_breaks] = cb;
-		number_of_breaks++;
-		// second default break
-		cb = malloc(sizeof(cbreak));
-		cb->tbb = 5 * ONE_MINUTE;
-		cb->du = 10;
-		cb->pt = 0;
-		cb->rt = time(0) + cb->tbb;
-		cbreaks[number_of_breaks] = cb;
-		number_of_breaks++;
-
+		add_defaults_breaks();
 		return;
 	}
 	char *buf = malloc(200);
@@ -265,6 +268,9 @@ load_config() {
 		} else if (strcmp(k, "idle_time") == 0) {
 			idle_time = atoi(p) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
 		}
+	}
+	if (number_of_breaks == 0) {
+		add_defaults_breaks();
 	}
 	fclose(cfg);
 	free(buf);
