@@ -139,7 +139,7 @@ im_daemon() {
 						if (j == i) continue;
 						syslog(LOG_DEBUG, "Correction.");
 						if (difftime(cbreaks[j]->rt - ONE_MINUTE, time(0)) <= 0) {
-							postpone_time = cbreaks[j]->tbb / 5;
+							postpone_time = cbreaks[i]->tbb / 10;
 							while (cbreaks[j]->rt < (time(0) + postpone_time))
 								cbreaks[j]->rt += postpone_time;
 						}
