@@ -56,7 +56,7 @@ struct x_context {
 
 
 volatile sig_atomic_t now = 0;
-volatile sig_atomic_t show = 0;
+volatile sig_atomic_t signal_brake = 0;
 static char *config_path;
 static char *font;
 static uint32_t number_of_breaks = 0;
@@ -73,6 +73,8 @@ static uint32_t nb = 0;
 static char **blacklist;
 static cbreak **cbreaks;
 static uint32_t idle_time;
+static uint32_t sleep_time;
+static uint8_t is_sleeping = 0;
 
 
 void load_config();
@@ -105,6 +107,7 @@ pokoy() {
 		syslog(LOG_DEBUG, "%s added to blacklist.", blacklist[u]);
 	}
 	syslog(LOG_DEBUG, "Idle time: %d", idle_time);
+	syslog(LOG_DEBUG, "Sleep time: %d", sleep_time);
 	syslog(LOG_DEBUG, "Flags: %d", flags);
 
 	uint32_t i, j;
@@ -165,13 +168,27 @@ pokoy() {
 			create_cb(cbreaks[0]);
 			now = 0;	
 		}
-		if (show) {
-			fseek(fp, 4, SEEK_SET);
-			for (i = 0; i < number_of_breaks; i++) 
-				fwrite(&(cbreaks[i]->rt), 4, 1, fp);
-			fflush(fp);
-			show = 0;
+		if (is_sleeping) {
+			syslog(LOG_DEBUG, "Start sleeping.");
+			int sleep_counter = 0;
+			while (is_sleeping) {
+				sleep(10);
+				if (signal_brake == 0) {
+					sleep_counter += 10;
+				} else {
+					signal_brake = 0;
+				}
+				syslog(LOG_DEBUG, "Sleep counter: %d", sleep_counter);
+				if (sleep_counter > sleep_time) {
+					is_sleeping = 0;
+				}
+			}
+			for (j = 0; j < number_of_breaks; j++) {
+				cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
+			}
+			syslog(LOG_DEBUG, "Awakening.");
 		}
+		
 		syslog (LOG_DEBUG, "--");
 		sleep(1);
 	}
@@ -217,6 +234,7 @@ void
 load_config() {
 	flags |= FLAG_ENABLE_POSTPONE | FLAG_ENABLE_SKIP;
 	idle_time = 10 * ONE_MINUTE;
+	sleep_time = 30 * ONE_MINUTE;
 	if (config_path[0] == '\0') {
 		char *config_home = getenv(CONFIG_HOME_ENV);
 		if (config_home != NULL)
@@ -267,6 +285,8 @@ load_config() {
 			nb++;
 		} else if (strcmp(k, "idle_time") == 0) {
 			idle_time = atoi(p) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
+		} else if (strcmp(k, "idle_time") == 0) {
+			sleep_time = atoi(p) * ONE_MINUTE + atoi(strtok(NULL, " \t:"));
 		}
 	}
 	if (number_of_breaks == 0) {
@@ -300,7 +320,10 @@ init_daemon() {
 	sa.sa_handler = signal_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGUSR1, &sa, NULL) == -1 || sigaction(SIGUSR2, &sa, NULL) == -1) {
+	if (sigaction(SIGTERM, &sa, NULL) == -1  || 
+		sigaction(SIGUSR1, &sa, NULL) == -1  || 
+		sigaction(SIGUSR2, &sa, NULL) == -1 ||
+		sigaction(SIGCONT, &sa, NULL) == -1) {
 		syslog(LOG_ERR, "Cannot change signal action.");
 	}
 }
@@ -350,7 +373,19 @@ init_x_context() {
 static void 
 signal_handler(int sig) {
 	if (sig == SIGUSR1) now = 1;		
-	if (sig == SIGUSR2) show = 1;		
+	if (sig == SIGUSR2) {
+		fseek(fp, 4, SEEK_SET);
+		if (is_sleeping) {
+			fwrite("zzzz", 4, 1, fp);
+		} else {
+			for (int i = 0; i < number_of_breaks; i++) {
+				fwrite(&(cbreaks[i]->rt), 4, 1, fp);
+			}
+		}
+		fflush(fp);
+		signal_brake = 1;
+	}
+	if (sig == SIGCONT) is_sleeping ^= 1; // flip
 	if (sig == SIGTERM) exit(0);
 }
 
@@ -612,6 +647,10 @@ main (int argc, char **argv) {
 			case 'd':
 				flags |= FLAG_DEBUG;
 				break;
+			case 's':
+				if (pid) kill(pid, SIGCONT);
+				else printf ("Daemon is not running.\n");
+				exit(0);
 			case '?':
 				exit(1);
 			default:
@@ -624,9 +663,14 @@ main (int argc, char **argv) {
 		uint32_t rt = 0;
 		fseek(fp, 4, SEEK_SET);
 		while (fread(&rt, 1, 4, fp)) {
-			rt -= time(0);
-			if ((rt / (60 * 60)) > 0) printf ("%02d:", rt / 60 * 60);
-			printf ("%02d:%02d\n", rt / 60, rt % 60);
+			if (memcmp(&rt, "zzzz", 4) == 0) {
+				printf ("Daemon is sleeping.\n");
+				break;
+			} else {
+				rt -= time(0);
+				if ((rt / (60 * 60)) > 0) printf ("%02d:", rt / 60 * 60);
+				printf ("%02d:%02d\n", rt / 60, rt % 60);
+			}
 		}
 		exit(0);
 	}

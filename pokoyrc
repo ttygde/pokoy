@@ -7,6 +7,7 @@
 #enable_skip		true
 #enable_postpone	true
 #idle_time			10:00
+#sleep_time			30:00
 
 #break				35:00	5:00	2:00	
 #break				5:00	0:10	0:00	

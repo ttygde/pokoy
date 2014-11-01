@@ -39,6 +39,9 @@ When daemon is running, you can run 'pokoy' without options to see remaining tim
 *-k*::
 	Kill daemon.
 
+*-s*::
+	Sleep / wake signal.
+
 *-d*::
 	Be verbose and print debug information to syslog.
 
@@ -80,6 +83,10 @@ Lines beginning with a hash mark ('#') are comments, and ignored.
 *idle_time* <%M:%S>::
 	If there is no user input for '<idle_time>', the daemon will sleep until user came back. +
 	Default: '10:00'
+
+*sleep_time* <%M:%S>::
+	If daemon receive sleep signal via -s, it will sleep for <sleep_time> +
+	Default: '30:00'
 
 *font* <font_name>::
 	X11 font. For example: '`-*-terminus-*-*-*-*-32-*-*-*-*-*-*-*`'.
