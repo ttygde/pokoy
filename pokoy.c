@@ -166,6 +166,14 @@ pokoy() {
 		}
 		if (now) {
 			create_cb(cbreaks[0]);
+			for (j = 1; j < number_of_breaks; j++) {
+				syslog(LOG_DEBUG, "Correction.");
+				if (difftime(cbreaks[j]->rt - ONE_MINUTE, time(0)) <= 0) {
+					postpone_time = cbreaks[0]->tbb / 10;
+					while (cbreaks[j]->rt < (time(0) + postpone_time))
+						cbreaks[j]->rt += postpone_time;
+				}
+			}
 			now = 0;	
 		}
 		if (is_sleeping) {
