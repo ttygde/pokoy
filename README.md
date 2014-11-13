@@ -29,5 +29,5 @@ $ pokoy -k # kill daemon
 
 **Screenshot:**
 <p align="center">
-  <img src="https://raw.githubusercontent.com/ttygde/pokoy/master/screenshot.png" alt="screenshot" style="width: 600px;"/>
+  <img src="https://raw.githubusercontent.com/ttygde/pokoy/master/screenshot.png" alt="screenshot" width="600px"/>
 </p>
