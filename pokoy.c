@@ -40,7 +40,7 @@
 
 
 typedef struct {
-	uint32_t		tbb;  // time between breaks
+	uint32_t		tbb; // time between breaks
 	uint32_t		du;  // duration
 	uint32_t		pt;  // postpone time
 	time_t			rt;  // remaining time 
@@ -493,9 +493,14 @@ create_cb(cbreak *cb) {
 		bar_y = xc.s->height_in_pixels / 1.5;
 	}
 
-	char timer[6] = "00:00";
+	char timer[20];
+	char sdur[10];
+	sprintf(sdur, "%02d:%02d", cb->du / ONE_MINUTE, cb->du % ONE_MINUTE);
+	syslog(LOG_DEBUG, "XAXA: %s\n", sdur);
+	sprintf(timer, "00:00 / %s", sdur);
+
 	if (((flags & FLAG_TIMER) == 0) && (width_timer == 0)) {
-		width_timer = get_ntext8_width(timer, 5);
+		width_timer = get_ntext8_width(timer, strlen(timer));
 		timer_x = (xc.s->width_in_pixels / 2) - (width_timer / 2);
 		timer_y = xc.s->height_in_pixels / 2;
 	}
@@ -511,10 +516,8 @@ create_cb(cbreak *cb) {
 		xcb_image_text_8(xc.c, NUMBER_OF_HASH_SYMBOLS + 2, w, xc.g, bar_x, bar_y, bar);
 	}
 	if ((flags & FLAG_TIMER) == 0) {
-		sprintf(timer,   "%02d", min);
-		sprintf(timer+3, "%02d", sec);
-		memcpy(timer+2, ":", 1);
-		xcb_image_text_8(xc.c, 5, w, xc.g, timer_x, timer_y, timer);
+		sprintf(timer,   "%02d:%02d / %s", min, sec, sdur);
+		xcb_image_text_8(xc.c, 13, w, xc.g, timer_x, timer_y, timer);
 	}
 	xcb_flush(xc.c);
 	sleep(1);
@@ -539,10 +542,8 @@ create_cb(cbreak *cb) {
 				xcb_image_text_8(xc.c, NUMBER_OF_HASH_SYMBOLS + 2, w, xc.g, bar_x, bar_y, bar);
 			}
 			if ((flags & FLAG_TIMER) == 0) {
-				sprintf(timer,   "%02d", min);
-				sprintf(timer+3, "%02d", sec);
-				memcpy(timer+2, ":", 1);
-				xcb_image_text_8(xc.c, 5, w, xc.g, timer_x, timer_y, timer);
+				sprintf(timer,   "%02d:%02d / %s", min, sec, sdur);
+				xcb_image_text_8(xc.c, 13, w, xc.g, timer_x, timer_y, timer);
 			}
 			xcb_flush(xc.c);
 
