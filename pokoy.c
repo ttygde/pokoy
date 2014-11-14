@@ -458,6 +458,21 @@ get_ntext8_width(const char *str, size_t n) {
 	return width;
 }
 
+uint8_t grab(xcb_window_t w) {
+	xcb_grab_keyboard_cookie_t cookie;
+	xcb_grab_keyboard_reply_t *reply;
+
+	cookie = xcb_grab_keyboard(xc.c, 0, w, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+	if (reply = xcb_grab_keyboard_reply(xc.c, cookie, NULL)) {
+		if (reply->status == XCB_GRAB_STATUS_SUCCESS) {
+			syslog(LOG_DEBUG, "Keyboard grabbed");
+			return 1;
+		}
+	}
+	syslog(LOG_DEBUG, "Cannot grab keyboard");
+	return 0;
+}
+
 
 void
 create_cb(cbreak *cb) {
@@ -466,6 +481,7 @@ create_cb(cbreak *cb) {
 	char bar[] = "[--------------------------------------------------]"; // 50 symbols + 2 brackets
 	uint32_t mask, values[3];
 	uint32_t p;
+	uint8_t grabbed = 0;
 
 	struct pollfd pollin[1] = {
 		{ .fd = xcb_get_file_descriptor(xc.c), .events = POLLIN }
@@ -484,8 +500,8 @@ create_cb(cbreak *cb) {
 					 mask, values);
 
 	xcb_map_window (xc.c, w);
-	xcb_set_input_focus(xc.c, XCB_INPUT_FOCUS_FOLLOW_KEYBOARD, w, XCB_CURRENT_TIME);
-	xcb_grab_keyboard(xc.c, 0, w, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+	/*xcb_set_input_focus(xc.c, XCB_INPUT_FOCUS_FOLLOW_KEYBOARD, w, XCB_CURRENT_TIME);*/
+	grabbed = grab(w);
 
 	if (((flags & FLAG_BAR) == 0) && (width_bar == 0)) {
 		width_bar = get_ntext8_width(bar, strlen(bar));
@@ -496,7 +512,6 @@ create_cb(cbreak *cb) {
 	char timer[20];
 	char sdur[10];
 	sprintf(sdur, "%02d:%02d", cb->du / ONE_MINUTE, cb->du % ONE_MINUTE);
-	syslog(LOG_DEBUG, "XAXA: %s\n", sdur);
 	sprintf(timer, "00:00 / %s", sdur);
 
 	if (((flags & FLAG_TIMER) == 0) && (width_timer == 0)) {
@@ -547,6 +562,8 @@ create_cb(cbreak *cb) {
 			}
 			xcb_flush(xc.c);
 
+			if (!grabbed) grabbed = grab(w);
+
 			if (min * ONE_MINUTE + sec >= cb->du) {
 				if ((flags & FLAG_BAR) == 0) {
 					while (number_of_steps < NUMBER_OF_HASH_SYMBOLS) {
@@ -572,7 +589,6 @@ create_cb(cbreak *cb) {
 							uint32_t col = 0;
 							xcb_key_press_event_t *kr = (xcb_key_press_event_t *)e;
 							xcb_keysym_t ksym = xcb_key_symbols_get_keysym(xc.symbols, kr->detail, col);
-							/*syslog(LOG_DEBUG, "%d\n", ksym);*/
 							switch(ksym) {
 								// skip
 								case XK_s:
