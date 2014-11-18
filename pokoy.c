@@ -23,7 +23,7 @@
 #define ever						;;
 #define NAME						"pokoy"
 #define VERSION						"0.2"
-#define PID_FILE					"/pokoy.pid"
+#define PID_FILE					"/tmp/pokoy.pid"
 #define CONFIG_NAME					NAME "rc"
 #define CONFIG_HOME_ENV				"XDG_CONFIG_HOME"
 #define RUNTIME_HOME_ENV			"XDG_RUNTIME_DIR"
@@ -627,19 +627,10 @@ main (int argc, char **argv) {
 	int status;
 	char c;
 	config_path = calloc(500, 1);
-	char *runtime_path_file = calloc(500, 1);
-	char *runtime_path_dir;
+	char runtime_path_dir[] = PID_FILE;
 
-	runtime_path_dir = getenv(RUNTIME_HOME_ENV);
-	strcpy(runtime_path_file, runtime_path_dir);
-	strcat(runtime_path_file, PID_FILE);
-	if (runtime_path_dir == NULL || ((fp = fopen(runtime_path_file, "a+")) == NULL)) {
-		memset(runtime_path_file, '\0', strlen(runtime_path_dir));
-		runtime_path_dir = getenv("HOME");
-		strcpy(runtime_path_file, runtime_path_dir);
-		strcat(runtime_path_file, PID_FILE);
-		if (runtime_path_dir == NULL || ((fp = fopen(runtime_path_file, "a+")) == NULL))
-			err(1, "Cannot open file %s", runtime_path_file);
+	if ((fp = fopen(runtime_path_dir, "a+")) == NULL) {
+		err(1, "Cannot open file %s", runtime_path_dir);
 	} 
 
 	pid_t pid = 0;
@@ -706,8 +697,7 @@ main (int argc, char **argv) {
 			case -1:
 				err(1, "fork error");
 			case 0: {
-				fp = fopen(runtime_path_file, "w+");
-				free(runtime_path_file);
+				fp = fopen(runtime_path_dir, "w+");
 				status = pokoy();
 				exit(status);
 			}
