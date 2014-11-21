@@ -23,7 +23,7 @@ $ pokoy
     Daemon is sleeping.
 
 $ pokoy -s # wake up
-$ pokoy -n # start first break
+$ pokoy -n # start first break now
 $ pokoy -k # kill daemon
 ```
 
