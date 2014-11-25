@@ -111,11 +111,20 @@ pokoy() {
 	syslog(LOG_DEBUG, "Flags: %d", flags);
 
 	uint32_t i, j;
+	int delta = 0;
 	for (ever) {
 		for (i = 0; i < number_of_breaks; i++) {
 			syslog(LOG_DEBUG, "time(0): %d, rt: %d, tbb: %d, d: %d, pt: %d\n", 
 					(int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->tbb, cbreaks[i]->du, cbreaks[i]->pt);
-			if (difftime(cbreaks[i]->rt, time(0)) <= 0) {
+			delta = difftime(cbreaks[i]->rt, time(0));
+			if (delta <= 0) {
+				// if system just woke up from sleeping reset all breaks
+				if (delta < -5) {
+					for (i = 0; i < number_of_breaks; i++) {
+						cbreaks[i]->rt = time(0) + cbreaks[i]->tbb;
+						goto skip;
+					}
+				}
 				if (nb > 0) { // if there is something in blacklist
 					ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
 					c = xcb_icccm_get_wm_class(xc.c, ifr->focus);
@@ -164,6 +173,7 @@ pokoy() {
 				idle_counter = 0;
 			} else idle_counter++;
 		}
+skip:
 		if (now) {
 			create_cb(cbreaks[0]);
 			for (j = 1; j < number_of_breaks; j++) {
