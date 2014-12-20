@@ -652,7 +652,7 @@ main (int argc, char **argv) {
 	while ((c = getopt (argc, argv, "hvc:nskd")) != -1)
 		switch (c) {
 			case 'h':
-				printf ("%s [-hvnkd] [-c CONFIG_PATH]\n", NAME);
+				printf ("%s [-hvnkds] [-c CONFIG_PATH]\n", NAME);
 				exit(0);
 				break;
 			case 'v':
