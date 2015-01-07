@@ -255,10 +255,12 @@ load_config() {
 	sleep_time = 30 * ONE_MINUTE;
 	if (config_path[0] == '\0') {
 		char *config_home = getenv(CONFIG_HOME_ENV);
-		if (config_home != NULL)
+		if (config_home != NULL) {
 			sprintf(config_path, "%s/%s/%s", config_home, NAME, CONFIG_NAME);
-		else
+		}
+		else {
 			sprintf(config_path, "%s/%s/%s/%s", getenv("HOME"), ".config", NAME, CONFIG_NAME);
+		}
 	}
 
 	FILE *cfg = fopen(config_path, "r");
@@ -636,8 +638,9 @@ int
 main (int argc, char **argv) {
 	int status;
 	char c;
-	config_path = calloc(500, 1);
 	char runtime_path_dir[] = PID_FILE;
+	uint8_t run = 0;
+	config_path = calloc(500, 1);
 
 	if ((fp = fopen(runtime_path_dir, "a+")) == NULL) {
 		err(1, "Cannot open file %s", runtime_path_dir);
@@ -649,15 +652,19 @@ main (int argc, char **argv) {
 			fread(&pid, 4, 1, fp);
 	}
 	
-	while ((c = getopt (argc, argv, "hvc:nskd")) != -1)
+	while ((c = getopt (argc, argv, "hvrc:nskd")) != -1)
 		switch (c) {
 			case 'h':
-				printf ("%s [-hvnkds] [-c CONFIG_PATH]\n", NAME);
+				printf ("%s [-hvrnkds] [-c CONFIG_PATH]\n", NAME);
 				exit(0);
 				break;
 			case 'v':
 				printf ("%s\n", VERSION);
 				exit(0);
+				break;
+			case 'r':
+				if (pid) printf ("Daemon is already running.\n");
+				else run = 1;
 				break;
 			case 'c':
 				snprintf(config_path, 500, "%s", optarg);
@@ -701,18 +708,23 @@ main (int argc, char **argv) {
 		exit(0);
 	}
 	else {
-		fclose(fp);
-		pid_t p = fork();
-		switch (p) {
-			case -1:
-				err(1, "fork error");
-			case 0: {
-				fp = fopen(runtime_path_dir, "w+");
-				status = pokoy();
-				exit(status);
+		if (run) {
+			fclose(fp);
+			pid_t p = fork();
+			switch (p) {
+				case -1:
+					err(1, "fork error");
+				case 0: {
+					fp = fopen(runtime_path_dir, "w+");
+					status = pokoy();
+					exit(status);
+				}
+				default:
+					exit(0);
 			}
-			default:
-				exit(0);
+		}
+		else {
+			printf ("Daemon is not running.\n");
 		}
 	}
 }

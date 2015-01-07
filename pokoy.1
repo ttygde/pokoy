@@ -2,12 +2,12 @@
 .\"     Title: pokoy
 .\"    Author: [see the "Author" section]
 .\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 11/01/2014
+.\"      Date: 01/08/2015
 .\"    Manual: pokoy manual
 .\"    Source: pokoy 0.2
 .\"  Language: English
 .\"
-.TH "POKOY" "1" "11/01/2014" "pokoy 0\&.2" "pokoy manual"
+.TH "POKOY" "1" "01/08/2015" "pokoy 0\&.2" "pokoy manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,32 +31,27 @@
 pokoy \- Lightweight daemon that helps prevent RSI and other computer related stress
 .SH "SYNOPSIS"
 .sp
-\fBpokoy\fR [\fB\-hvnkd\fR] [\fB\-c\fR \fICONFIG_PATH\fR]
+\fBpokoy\fR [\fB\-hvrnkd\fR] [\fB\-c\fR \fICONFIG_PATH\fR]
 .SH "DESCRIPTION"
 .sp
 \fBpokoy\fR is a simple daemon for X\&. It locks the screen and forces you to take regular breaks\&.
 .SH "OPTIONS"
 .sp
-When daemon is running, you can run \fIpokoy\fR without options to see remaining time\&.
+You can run \fIpokoy\fR without options to see daemon status\&.
 .PP
-\fB\-h\fR
+\fB\-r\fR
 .RS 4
-Print the synopsis and exit\&.
-.RE
-.PP
-\fB\-v\fR
-.RS 4
-Print the version and exit\&.
-.RE
-.PP
-\fB\-n\fR
-.RS 4
-Take break now\&.
+Run daemon\&.
 .RE
 .PP
 \fB\-k\fR
 .RS 4
 Kill daemon\&.
+.RE
+.PP
+\fB\-n\fR
+.RS 4
+Take break now\&.
 .RE
 .PP
 \fB\-s\fR
@@ -72,6 +67,16 @@ Be verbose and print debug information to syslog\&.
 \fB\-c\fR \fICONFIG_PATH\fR
 .RS 4
 Use the given configuration file\&.
+.RE
+.PP
+\fB\-h\fR
+.RS 4
+Print the synopsis and exit\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Print the version and exit\&.
 .RE
 .SH "CONFIGURATION"
 .sp

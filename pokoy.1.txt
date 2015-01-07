@@ -13,7 +13,7 @@ pokoy - Lightweight daemon that helps prevent RSI and other computer related str
 Synopsis
 --------
 
-*pokoy* [*-hvnkd*] [*-c* 'CONFIG_PATH']
+*pokoy* [*-hvrnkd*] [*-c* 'CONFIG_PATH']
 
 
 Description
@@ -25,19 +25,16 @@ Description
 Options
 -------
 
-When daemon is running, you can run 'pokoy' without options to see remaining time.
+You can run 'pokoy' without options to see daemon status.
 
-*-h*::
-	Print the synopsis and exit.
-
-*-v*::
-	Print the version and exit.
-
-*-n*::
-	Take break now.
+*-r*::
+	Run daemon.
 
 *-k*::
 	Kill daemon.
+
+*-n*::
+	Take break now.
 
 *-s*::
 	Sleep / wake signal.
@@ -47,6 +44,12 @@ When daemon is running, you can run 'pokoy' without options to see remaining tim
 
 *-c* 'CONFIG_PATH'::
 	Use the given configuration file.
+
+*-h*::
+	Print the synopsis and exit.
+
+*-v*::
+	Print the version and exit.
 
 Configuration
 -------------

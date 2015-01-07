@@ -13,7 +13,7 @@ $ make
 
 **Examples:**
 ```
-$ pokoy # start daemon
+$ pokoy -r # run daemon
 $ pokoy
     29:59
 	04:59
