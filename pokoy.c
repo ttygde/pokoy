@@ -662,6 +662,8 @@ main (int argc, char **argv) {
 				printf ("%s\n", VERSION);
 				exit(0);
 				break;
+			case 'd':
+				flags |= FLAG_DEBUG;
 			case 'r':
 				if (pid) printf ("Daemon is already running.\n");
 				else run = 1;
@@ -677,9 +679,6 @@ main (int argc, char **argv) {
 				if (pid) kill(pid, SIGTERM);
 				else printf ("Daemon is not running.\n");
 				exit(0);
-			case 'd':
-				flags |= FLAG_DEBUG;
-				break;
 			case 's':
 				if (pid) kill(pid, SIGCONT);
 				else printf ("Daemon is not running.\n");
