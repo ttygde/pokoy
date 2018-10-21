@@ -22,7 +22,7 @@
 
 #define ever						;;
 #define NAME						"pokoy"
-#define VERSION						"0.2"
+#define VERSION						"0.2.3-SNAPSHOT"
 #define PID_FILE					"/tmp/pokoy.pid"
 #define CONFIG_NAME					NAME "rc"
 #define CONFIG_HOME_ENV				"XDG_CONFIG_HOME"
@@ -122,8 +122,8 @@ pokoy() {
 				if (delta < -5) {
 					for (i = 0; i < number_of_breaks; i++) {
 						cbreaks[i]->rt = time(0) + cbreaks[i]->tbb;
-						goto skip;
 					}
+					goto skip;
 				}
 				if (nb > 0) { // if there is something in blacklist
 					ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
