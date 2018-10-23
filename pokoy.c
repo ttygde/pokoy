@@ -215,15 +215,13 @@ skip:
 
 uint8_t
 is_idle() {
-	xcb_screensaver_query_info_cookie_t sqic;
-	xcb_screensaver_query_info_reply_t *sqir;
-	sqic = xcb_screensaver_query_info(xc.c, xc.s->root);	
-	sqir = xcb_screensaver_query_info_reply(xc.c, sqic, NULL);
-	syslog(LOG_DEBUG, "Idle time: %d", sqir->ms_since_user_input / 1000);
-	if ((sqir->ms_since_user_input / 1000) > idle_time) 
-		return 1;
-	else 
-		return 0;
+	xcb_screensaver_query_info_cookie_t sqic = xcb_screensaver_query_info(xc.c, xc.s->root);
+	xcb_screensaver_query_info_reply_t *sqir = xcb_screensaver_query_info_reply(xc.c, sqic, NULL);
+   	uint32_t sec_since_user_input = sqir->ms_since_user_input / 1000;
+	free(sqir);
+
+	syslog(LOG_DEBUG, "Idle time: %d", sec_since_user_input);
+    	return (sec_since_user_input > idle_time);
 }
 
 
@@ -412,7 +410,11 @@ signal_handler(int sig) {
 void
 cleanup() {
 	syslog(LOG_INFO, "Stopping daemon.");
+    	for (uint32_t i = 0; i < number_of_breaks; ++i)
+            free(cbreaks[i]);
 	free(cbreaks);
+    	for (uint32_t i = 0; i < nb; ++i)
+            free(blacklist[i]);
 	free(blacklist);
 	fclose(fp);
 	xcb_key_symbols_free(xc.symbols);
@@ -474,12 +476,14 @@ uint8_t grab(xcb_window_t w) {
 	xcb_grab_keyboard_reply_t *reply;
 
 	cookie = xcb_grab_keyboard(xc.c, 0, w, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-	if (reply = xcb_grab_keyboard_reply(xc.c, cookie, NULL)) {
+	if ((reply = xcb_grab_keyboard_reply(xc.c, cookie, NULL))) {
 		if (reply->status == XCB_GRAB_STATUS_SUCCESS) {
+            		free(reply);
 			syslog(LOG_DEBUG, "Keyboard grabbed");
 			return 1;
 		}
 	}
+    	free(reply);
 	syslog(LOG_DEBUG, "Cannot grab keyboard");
 	return 0;
 }
@@ -594,38 +598,41 @@ create_cb(cbreak *cb) {
 
 		if ((p = poll(pollin, 1, 1000)) > 0) { 
 			if (pollin[0].revents & POLLIN) {
-				while ((e = xcb_poll_for_event(xc.c))) {
-					switch (e->response_type & ~0x80) {
-						case XCB_KEY_PRESS: {
-							int col = 0;
-							xcb_key_press_event_t *kr = (xcb_key_press_event_t *)e;
-							xcb_keysym_t ksym = xcb_key_symbols_get_keysym(xc.symbols, kr->detail, col);
-							switch(ksym) {
-								// skip
-								case XK_s:
-									if (flags & FLAG_ENABLE_SKIP) {
-										xcb_destroy_window(xc.c, w);
-										xcb_flush(xc.c);
-										cb->rt = time(0) + cb->tbb;
-										return;
-									}
-									break;
-								// postpone
-								case XK_p:
-									if (flags & FLAG_ENABLE_POSTPONE && cb->pt != 0) {
-										xcb_destroy_window(xc.c, w);
-										xcb_flush(xc.c);
-										cb->rt = time(0) + cb->pt; // add postpone time to remaining time
-										return;
-									}
-									break;
-								default:
-									break;
+				while ((e = xcb_poll_for_event(xc.c)))
+                			{
+					if ((e->response_type & ~0x80) != XCB_KEY_PRESS)
+                    			{
+                        				free(e);
+                        				continue;
+                    			}
+					int col = 0;
+					xcb_key_press_event_t *kr = (xcb_key_press_event_t *)e;
+					xcb_keysym_t ksym = xcb_key_symbols_get_keysym(xc.symbols, kr->detail, col);
+					switch(ksym) {
+						// skip
+						case XK_s:
+							if (flags & FLAG_ENABLE_SKIP) {
+								xcb_destroy_window(xc.c, w);
+								xcb_flush(xc.c);
+								cb->rt = time(0) + cb->tbb;
+								free (e);
+								return;
 							}
-						}
-						break;
+							break;
+						// postpone
+						case XK_p:
+							if (flags & FLAG_ENABLE_POSTPONE && cb->pt != 0) {
+								xcb_destroy_window(xc.c, w);
+								xcb_flush(xc.c);
+								cb->rt = time(0) + cb->pt; // add postpone time to remaining time
+								free (e);
+								return;
+							}
+							break;
+						default:
+							free (e);
+							break;
 					}
-					free (e);
 				}
 			}
 		}
