@@ -22,21 +22,21 @@
 
 #define ever						;;
 #define NAME						"pokoy"
-#define VERSION						"0.2"
+#define VERSION						"0.2.3-SNAPSHOT"
 #define PID_FILE					"/tmp/pokoy.pid"
 #define CONFIG_NAME					NAME "rc"
 #define CONFIG_HOME_ENV				"XDG_CONFIG_HOME"
 #define RUNTIME_HOME_ENV			"XDG_RUNTIME_DIR"
 #define START_COMMENT				'#'
-#define NUMBER_OF_HASH_SYMBOLS		50
-#define ONE_MINUTE					60
-#define FLAG_BAR					1
-#define FLAG_TIMER					2
-#define FLAG_ENABLE_SKIP			4
-#define FLAG_ENABLE_POSTPONE		8
-#define FLAG_DEBUG					16
-#define FLAG_BLOCK					32
-#define FLAG_IDLE					64
+#define NUMBER_OF_HASH_SYMBOLS				50u
+#define ONE_MINUTE					60u
+#define FLAG_BAR						1u
+#define FLAG_TIMER					2u
+#define FLAG_ENABLE_SKIP					4u
+#define FLAG_ENABLE_POSTPONE				8u
+#define FLAG_DEBUG					16u
+#define FLAG_BLOCK					32u
+#define FLAG_IDLE					64u
 
 
 typedef struct {
@@ -77,13 +77,13 @@ static uint32_t sleep_time;
 static uint8_t is_sleeping = 0;
 
 
-void load_config();
-void init_daemon();
-void init_x_context();
+void load_config(void);
+void init_daemon(void);
+void init_x_context(void);
 void create_cb(cbreak *); 
 static void signal_handler(int);
-void cleanup();
-uint8_t is_idle();
+void cleanup(void);
+uint8_t is_idle(void);
 
 
 static uint8_t
@@ -95,7 +95,7 @@ pokoy() {
 	uint32_t postpone_time;
 
 	font = malloc(200);
-	cbreaks = malloc(sizeof(char *) * 20);
+	cbreaks = malloc(sizeof(cbreak *) * 20);
 	blacklist = malloc(sizeof(char *) * 20);
 
 	load_config();
@@ -122,8 +122,8 @@ pokoy() {
 				if (delta < -5) {
 					for (i = 0; i < number_of_breaks; i++) {
 						cbreaks[i]->rt = time(0) + cbreaks[i]->tbb;
-						goto skip;
 					}
+					goto skip;
 				}
 				if (nb > 0) { // if there is something in blacklist
 					ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
@@ -188,7 +188,7 @@ skip:
 		}
 		if (is_sleeping) {
 			syslog(LOG_DEBUG, "Start sleeping.");
-			int sleep_counter = 0;
+			uint32_t sleep_counter = 0;
 			while (is_sleeping) {
 				sleep(10);
 				if (signal_brake == 0) {
@@ -196,7 +196,7 @@ skip:
 				} else {
 					signal_brake = 0;
 				}
-				syslog(LOG_DEBUG, "Sleep counter: %d", sleep_counter);
+				syslog(LOG_DEBUG, "Sleep counter: %u", sleep_counter);
 				if (sleep_counter > sleep_time) {
 					is_sleeping = 0;
 				}
@@ -210,21 +210,18 @@ skip:
 		syslog (LOG_DEBUG, "--");
 		sleep(1);
 	}
-	return 0;
 }
 
 
 uint8_t
 is_idle() {
-	xcb_screensaver_query_info_cookie_t sqic;
-	xcb_screensaver_query_info_reply_t *sqir;
-	sqic = xcb_screensaver_query_info(xc.c, xc.s->root);	
-	sqir = xcb_screensaver_query_info_reply(xc.c, sqic, NULL);
-	syslog(LOG_DEBUG, "Idle time: %d", sqir->ms_since_user_input / 1000);
-	if ((sqir->ms_since_user_input / 1000) > idle_time) 
-		return 1;
-	else 
-		return 0;
+	xcb_screensaver_query_info_cookie_t sqic = xcb_screensaver_query_info(xc.c, xc.s->root);
+	xcb_screensaver_query_info_reply_t *sqir = xcb_screensaver_query_info_reply(xc.c, sqic, NULL);
+   	uint32_t sec_since_user_input = sqir->ms_since_user_input / 1000;
+	free(sqir);
+
+	syslog(LOG_DEBUG, "Idle time: %d", sec_since_user_input);
+    	return (sec_since_user_input > idle_time);
 }
 
 
@@ -398,7 +395,7 @@ signal_handler(int sig) {
 		if (is_sleeping) {
 			fwrite("zzzz", 4, 1, fp);
 		} else {
-			for (int i = 0; i < number_of_breaks; i++) {
+			for (uint32_t i = 0; i < number_of_breaks; i++) {
 				fwrite(&(cbreaks[i]->rt), 4, 1, fp);
 			}
 		}
@@ -413,7 +410,11 @@ signal_handler(int sig) {
 void
 cleanup() {
 	syslog(LOG_INFO, "Stopping daemon.");
+    	for (uint32_t i = 0; i < number_of_breaks; ++i)
+            free(cbreaks[i]);
 	free(cbreaks);
+    	for (uint32_t i = 0; i < nb; ++i)
+            free(blacklist[i]);
 	free(blacklist);
 	fclose(fp);
 	xcb_key_symbols_free(xc.symbols);
@@ -452,7 +453,7 @@ get_ntext_width(const xcb_char2b_t *wstr, size_t n) {
 		syslog(LOG_WARNING, "Failed to get text information.");
 		return 0;
 	}
-	uint32_t width = r->overall_width;
+	uint32_t width = (uint32_t)r->overall_width;
 	free(r);
 	return width;
 }
@@ -475,12 +476,14 @@ uint8_t grab(xcb_window_t w) {
 	xcb_grab_keyboard_reply_t *reply;
 
 	cookie = xcb_grab_keyboard(xc.c, 0, w, XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-	if (reply = xcb_grab_keyboard_reply(xc.c, cookie, NULL)) {
+	if ((reply = xcb_grab_keyboard_reply(xc.c, cookie, NULL))) {
 		if (reply->status == XCB_GRAB_STATUS_SUCCESS) {
+            		free(reply);
 			syslog(LOG_DEBUG, "Keyboard grabbed");
 			return 1;
 		}
 	}
+    	free(reply);
 	syslog(LOG_DEBUG, "Cannot grab keyboard");
 	return 0;
 }
@@ -518,7 +521,7 @@ create_cb(cbreak *cb) {
 	if (((flags & FLAG_BAR) == 0) && (width_bar == 0)) {
 		width_bar = get_ntext8_width(bar, strlen(bar));
 		bar_x = (xc.s->width_in_pixels / 2) - (width_bar / 2);
-		bar_y = xc.s->height_in_pixels / 1.5;
+		bar_y = xc.s->height_in_pixels * 2 / 3;
 	}
 
 	char timer[20];
@@ -537,7 +540,7 @@ create_cb(cbreak *cb) {
 	double i = 0; // step_energy
 	uint8_t min = 0, sec = 0;
 	uint8_t number_of_steps = 0;
-	uint32_t now = time(0);
+	time_t now = time(NULL);
 
 	if ((flags & FLAG_BAR) == 0) {
 		xcb_image_text_8(xc.c, NUMBER_OF_HASH_SYMBOLS + 2, w, xc.g, bar_x, bar_y, bar);
@@ -550,7 +553,7 @@ create_cb(cbreak *cb) {
 	sleep(1);
 
 	for (ever) {
-		if (now != time(0)) { // second
+		if (now != time(NULL)) { // second
 			now++;
 			sec++;
 			if (sec > 59) {
@@ -595,38 +598,41 @@ create_cb(cbreak *cb) {
 
 		if ((p = poll(pollin, 1, 1000)) > 0) { 
 			if (pollin[0].revents & POLLIN) {
-				while ((e = xcb_poll_for_event(xc.c))) {
-					switch (e->response_type & ~0x80) {
-						case XCB_KEY_PRESS: {
-							uint32_t col = 0;
-							xcb_key_press_event_t *kr = (xcb_key_press_event_t *)e;
-							xcb_keysym_t ksym = xcb_key_symbols_get_keysym(xc.symbols, kr->detail, col);
-							switch(ksym) {
-								// skip
-								case XK_s:
-									if (flags & FLAG_ENABLE_SKIP) {
-										xcb_destroy_window(xc.c, w);
-										xcb_flush(xc.c);
-										cb->rt = time(0) + cb->tbb;
-										return;
-									}
-									break;
-								// postpone
-								case XK_p:
-									if (flags & FLAG_ENABLE_POSTPONE && cb->pt != 0) {
-										xcb_destroy_window(xc.c, w);
-										xcb_flush(xc.c);
-										cb->rt = time(0) + cb->pt; // add postpone time to remaining time
-										return;
-									}
-									break;
-								default:
-									break;
+				while ((e = xcb_poll_for_event(xc.c)))
+                			{
+					if ((e->response_type & ~0x80) != XCB_KEY_PRESS)
+                    			{
+                        				free(e);
+                        				continue;
+                    			}
+					int col = 0;
+					xcb_key_press_event_t *kr = (xcb_key_press_event_t *)e;
+					xcb_keysym_t ksym = xcb_key_symbols_get_keysym(xc.symbols, kr->detail, col);
+					switch(ksym) {
+						// skip
+						case XK_s:
+							if (flags & FLAG_ENABLE_SKIP) {
+								xcb_destroy_window(xc.c, w);
+								xcb_flush(xc.c);
+								cb->rt = time(0) + cb->tbb;
+								free (e);
+								return;
 							}
-						}
-						break;
+							break;
+						// postpone
+						case XK_p:
+							if (flags & FLAG_ENABLE_POSTPONE && cb->pt != 0) {
+								xcb_destroy_window(xc.c, w);
+								xcb_flush(xc.c);
+								cb->rt = time(0) + cb->pt; // add postpone time to remaining time
+								free (e);
+								return;
+							}
+							break;
+						default:
+							free (e);
+							break;
 					}
-					free (e);
 				}
 			}
 		}
@@ -657,11 +663,9 @@ main (int argc, char **argv) {
 			case 'h':
 				printf ("%s [-hvrnkds] [-c CONFIG_PATH]\n", NAME);
 				exit(0);
-				break;
 			case 'v':
 				printf ("%s\n", VERSION);
 				exit(0);
-				break;
 			case 'd':
 				flags |= FLAG_DEBUG;
 			case 'r':
@@ -698,11 +702,10 @@ main (int argc, char **argv) {
 			if (memcmp(&rt, "zzzz", 4) == 0) {
 				printf ("Daemon is sleeping.\n");
 				break;
-			} else {
-				rt -= time(0);
-				if ((rt / (60 * 60)) > 0) printf ("%02d:", rt / 60 * 60);
-				printf ("%02d:%02d\n", rt / 60, rt % 60);
 			}
+			rt -= time(NULL);
+			if ((rt / (60 * 60)) > 0) printf ("%02d:", rt / 60 * 60);
+			printf ("%02d:%02d\n", rt / 60, rt % 60);
 		}
 		exit(0);
 	}
