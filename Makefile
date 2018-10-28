@@ -1,4 +1,4 @@
-VERSION		= 0.2.3-SNAPSHOT
+VERSION		= 0.2.3
 CC          ?= gcc
 STRIP		?= strip
 CFLAGS      = -std=gnu11 -O2
