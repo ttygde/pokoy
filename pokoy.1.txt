@@ -48,6 +48,9 @@ You can run 'pokoy' without options to see daemon status.
 *-h*::
 	Print the synopsis and exit.
 
+*-l*::
+	Toggle workrave mode and exit.
+
 *-v*::
 	Print the version and exit.
 
@@ -82,6 +85,10 @@ Lines beginning with a hash mark ('#') are comments, and ignored.
 *enable_postpone* <true/false>::
 	If set to true, user can press 'p' to postpone break. +
 	Default: 'true'
+
+*enable_workrave* <true/false>::
+	If set to true, pokoy will work in workrave(1) mode. By that is suggested that after 5 idle seconds the break timers are paused. Then, if a time of a break passes in this idle mode, the timer sets current time back to the full state.
+	Default: 'false'
 
 *idle_time* <%M:%S>::
 	If there is no user input for '<idle_time>', the daemon will sleep until user came back. +
