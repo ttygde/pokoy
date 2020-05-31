@@ -39,6 +39,7 @@
 #define FLAG_BLOCK 32u
 #define FLAG_IDLE 64u
 #define FLAG_WORKRAVE 128u
+#define FLAG_NOTIFY 256u
 
 typedef struct {
     uint32_t tbb; // time between breaks
@@ -116,6 +117,13 @@ static uint8_t pokoy()
             syslog(LOG_DEBUG, "time(0): %d, rt: %d, tbb: %d, d: %d, pt: %d\n",
                 (int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->tbb, cbreaks[i]->du, cbreaks[i]->pt);
             cbreaks[i]->delta = difftime(cbreaks[i]->rt, time(0));
+
+            if (( flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30)) {
+            	char command[100];
+            	snprintf(command, 100, "notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"", (float)cbreaks[i]->du/ONE_MINUTE);
+            	system(command);
+            }
+
             if (cbreaks[i]->delta <= 0) {
                 // if system just woke up from sleeping reset all breaks
                 if (cbreaks[i]->delta < -5) {
@@ -125,6 +133,8 @@ static uint8_t pokoy()
                     }
                     goto skip;
                 }
+                
+
 
                 if (nb > 0) { // if there is something in blacklist
                     ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
@@ -315,6 +325,9 @@ void load_config()
         } else if (strcmp(k, "enable_workrave") == 0) {
             if (strcmp(p, "true") == 0)
                 flags |= FLAG_WORKRAVE;
+        } else if (strcmp(k, "enable_notify") == 0) {
+            if (strcmp(p, "true") == 0)
+                flags |= FLAG_NOTIFY;
         } else if (strcmp(k, "font") == 0) {
             strcpy(font, p);
         } else if (strcmp(k, "block") == 0) {
