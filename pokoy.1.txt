@@ -90,6 +90,10 @@ Lines beginning with a hash mark ('#') are comments, and ignored.
 	If set to true, pokoy will work in workrave(1) mode. By that is suggested that after 5 idle seconds the break timers are paused. Then, if a time of a break passes in this idle mode, the timer sets current time back to the full state.
 	Default: 'false'
 
+*enable_notify* <true/false>::
+	If set to true, pokoy will send desktop notifications about incoming breaks. Requires notify-send(1).
+	Default: 'false'
+
 *idle_time* <%M:%S>::
 	If there is no user input for '<idle_time>', the daemon will sleep until user came back. +
 	Default: '10:00'
