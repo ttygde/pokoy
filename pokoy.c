@@ -83,7 +83,8 @@ void init_x_context(void);
 void create_cb(cbreak*);
 static void signal_handler(int);
 void cleanup(void);
-uint8_t is_idle(uint32_t duration);
+uint8_t is_idle(uint32_t);
+void reset_rt(cbreak*);
 
 static uint8_t pokoy()
 {
@@ -118,23 +119,15 @@ static uint8_t pokoy()
                 (int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->tbb, cbreaks[i]->du, cbreaks[i]->pt);
             cbreaks[i]->delta = difftime(cbreaks[i]->rt, time(0));
 
-            if (( flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30)) {
-            	char command[100];
-            	snprintf(command, 100, "notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"", (float)cbreaks[i]->du/ONE_MINUTE);
-            	system(command);
-            }
-
-            if (cbreaks[i]->delta <= 0) {
+        if (cbreaks[i]->delta <= 0) {
                 // if system just woke up from sleeping reset all breaks
                 if (cbreaks[i]->delta < -5) {
                     for (i = 0; i < number_of_breaks; i++) {
-                        cbreaks[i]->rt = time(0) + cbreaks[i]->tbb;
-                        cbreaks[i]->delta = difftime(cbreaks[i]->rt, time(0));
+                        reset_rt(cbreaks[j]);
                     }
                     goto skip;
                 }
                 
-
 
                 if (nb > 0) { // if there is something in blacklist
                     ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
@@ -154,6 +147,7 @@ static uint8_t pokoy()
                     }
                     free(ifr);
                 }
+         
                 if ((flags & FLAG_BLOCK) == 0) {
                     cbreaks[i]->rt = INT_MAX;
                     create_cb(cbreaks[i]);
@@ -172,13 +166,19 @@ static uint8_t pokoy()
                 flags &= ~FLAG_BLOCK;
             }
 
+            if (( flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30)) {
+                 char command[100];
+                 snprintf(command, 100, "notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
+                    (float)cbreaks[i]->du/ONE_MINUTE);
+                 system(command);
+            }
+
             if ((idle_counter > 5) && (flags & FLAG_WORKRAVE)) {
                 while (is_idle(5)) {
-                    sleep(2);
+                    sleep(1);
                     for (j = 0; j < number_of_breaks; j++) {
                         if (is_idle(cbreaks[j]->du)) {
-                            cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
-                            cbreaks[j]->delta = cbreaks[j]->tbb;
+                            reset_rt(cbreaks[j]);
                         } else {
                             cbreaks[j]->rt = time(0) + cbreaks[j]->delta + 1; 
                         }
@@ -192,7 +192,7 @@ static uint8_t pokoy()
                         sleep(30);
                     }
                     for (j = 0; j < number_of_breaks; j++) {
-                        cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
+                        reset_rt(cbreaks[j]);
                     }
                     syslog(LOG_DEBUG, "Awakening.");
                 }
@@ -229,7 +229,7 @@ static uint8_t pokoy()
                 }
             }
             for (j = 0; j < number_of_breaks; j++) {
-                cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
+                reset_rt(cbreaks[j]);
             }
             syslog(LOG_DEBUG, "Awakening.");
         }
@@ -248,6 +248,12 @@ uint8_t is_idle(uint32_t duration)
 
     syslog(LOG_DEBUG, "Idle time: %d", sec_since_user_input);
     return (sec_since_user_input > duration);
+}
+
+void reset_rt(cbreak* cb)
+{
+    cb->rt = time(0) + cb->tbb;
+    cb->delta = difftime(cb->rt, time(0));
 }
 
 void add_default_breaks()
@@ -622,7 +628,7 @@ void create_cb(cbreak* cb)
                 usleep(100000); // just to show that bar is complete
                 xcb_destroy_window(xc.c, w);
                 xcb_flush(xc.c);
-                cb->rt = time(0) + cb->tbb;
+                reset_rt(cb);
                 return;
             }
         }
@@ -644,6 +650,7 @@ void create_cb(cbreak* cb)
                             xcb_destroy_window(xc.c, w);
                             xcb_flush(xc.c);
                             cb->rt = time(0) + cb->tbb;
+                            cb->delta = difftime(cb->rt, time(0));
                             free(e);
                             return;
                         }
