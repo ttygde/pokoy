@@ -166,11 +166,12 @@ static uint8_t pokoy()
                 flags &= ~FLAG_BLOCK;
             }
 
-            if (( flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30)) {
-                 char command[100];
-                 snprintf(command, 100, "notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
+            if ( (flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30) && ((flags & FLAG_BLOCK == 0)) ) {
+                 char* command[100];
+                 snprintf(*command,100,"notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
                     (float)cbreaks[i]->du/ONE_MINUTE);
-                 system(command);
+                 system(*command);
+                 free(command);
             }
 
             if ((idle_counter > 5) && (flags & FLAG_WORKRAVE)) {
