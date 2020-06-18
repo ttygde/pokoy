@@ -46,7 +46,7 @@ typedef struct {
     uint32_t du; // duration
     uint32_t pt; // postpone time
     time_t rt; // remaining time
-    int32_t delta; // corresponding delta
+    int64_t delta; // corresponding delta
 } cbreak;
 
 struct x_context {
@@ -101,7 +101,7 @@ static uint8_t pokoy()
     load_config();
     init_daemon();
     init_x_context();
-
+ 
     syslog(LOG_INFO, "Starting daemon.");
     for (uint8_t u = 0; u < nb; u++) {
         syslog(LOG_DEBUG, "%s added to blacklist.", blacklist[u]);
@@ -122,7 +122,7 @@ static uint8_t pokoy()
         if (cbreaks[i]->delta <= 0) {
                 // if system just woke up from sleeping reset all breaks
                 if (cbreaks[i]->delta < -5) {
-                    for (i = 0; i < number_of_breaks; i++) {
+                    for (j = 0; j < number_of_breaks; j++) {
                         reset_rt(cbreaks[j]);
                     }
                     goto skip;
@@ -166,12 +166,11 @@ static uint8_t pokoy()
                 flags &= ~FLAG_BLOCK;
             }
 
-            if ( (flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30) && ((flags & FLAG_BLOCK == 0)) ) {
-                 char* command[100];
-                 snprintf(*command,100,"notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
+            if ( (flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30) ){
+                 char command[100];
+                 snprintf(command,100,"notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
                     (float)cbreaks[i]->du/ONE_MINUTE);
-                 system(*command);
-                 free(command);
+                 system(command);
             }
 
             if ((idle_counter > 5) && (flags & FLAG_WORKRAVE)) {
@@ -254,7 +253,7 @@ uint8_t is_idle(uint32_t duration)
 void reset_rt(cbreak* cb)
 {
     cb->rt = time(0) + cb->tbb;
-    cb->delta = difftime(cb->rt, time(0));
+    cb->delta = cb->tbb;
 }
 
 void add_default_breaks()
