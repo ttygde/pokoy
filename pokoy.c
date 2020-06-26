@@ -23,7 +23,7 @@
     ;        \
     ;
 #define NAME "pokoy"
-#define VERSION "0.2.3"
+#define VERSION "0.2.4"
 #define PID_FILE "/tmp/pokoy.pid"
 #define CONFIG_NAME NAME "rc"
 #define CONFIG_HOME_ENV "XDG_CONFIG_HOME"

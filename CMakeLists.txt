@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(pokoy)
-set(VERSION "0.2.3")
+set(VERSION "0.2.4")
 
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_FIND_MODULE_DIR})
