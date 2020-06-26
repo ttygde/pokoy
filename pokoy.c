@@ -23,7 +23,7 @@
     ;        \
     ;
 #define NAME "pokoy"
-#define VERSION "0.2.3"
+#define VERSION "0.2.4"
 #define PID_FILE "/tmp/pokoy.pid"
 #define CONFIG_NAME NAME "rc"
 #define CONFIG_HOME_ENV "XDG_CONFIG_HOME"
@@ -38,12 +38,15 @@
 #define FLAG_DEBUG 16u
 #define FLAG_BLOCK 32u
 #define FLAG_IDLE 64u
+#define FLAG_WORKRAVE 128u
+#define FLAG_NOTIFY 256u
 
 typedef struct {
     uint32_t tbb; // time between breaks
     uint32_t du; // duration
     uint32_t pt; // postpone time
     time_t rt; // remaining time
+    int64_t delta; // corresponding delta
 } cbreak;
 
 struct x_context {
@@ -80,7 +83,8 @@ void init_x_context(void);
 void create_cb(cbreak*);
 static void signal_handler(int);
 void cleanup(void);
-uint8_t is_idle(void);
+uint8_t is_idle(uint32_t);
+void reset_rt(cbreak*);
 
 static uint8_t pokoy()
 {
@@ -97,7 +101,7 @@ static uint8_t pokoy()
     load_config();
     init_daemon();
     init_x_context();
-
+ 
     syslog(LOG_INFO, "Starting daemon.");
     for (uint8_t u = 0; u < nb; u++) {
         syslog(LOG_DEBUG, "%s added to blacklist.", blacklist[u]);
@@ -107,20 +111,24 @@ static uint8_t pokoy()
     syslog(LOG_DEBUG, "Flags: %d", flags);
 
     uint32_t i, j;
-    int delta = 0;
     for (ever) {
+
         for (i = 0; i < number_of_breaks; i++) {
+
             syslog(LOG_DEBUG, "time(0): %d, rt: %d, tbb: %d, d: %d, pt: %d\n",
                 (int)time(0), (int)cbreaks[i]->rt, cbreaks[i]->tbb, cbreaks[i]->du, cbreaks[i]->pt);
-            delta = difftime(cbreaks[i]->rt, time(0));
-            if (delta <= 0) {
+            cbreaks[i]->delta = difftime(cbreaks[i]->rt, time(0));
+
+        if (cbreaks[i]->delta <= 0) {
                 // if system just woke up from sleeping reset all breaks
-                if (delta < -5) {
-                    for (i = 0; i < number_of_breaks; i++) {
-                        cbreaks[i]->rt = time(0) + cbreaks[i]->tbb;
+                if (cbreaks[i]->delta < -5) {
+                    for (j = 0; j < number_of_breaks; j++) {
+                        reset_rt(cbreaks[j]);
                     }
                     goto skip;
                 }
+                
+
                 if (nb > 0) { // if there is something in blacklist
                     ifr = xcb_get_input_focus_reply(xc.c, xcb_get_input_focus(xc.c), NULL);
                     c = xcb_icccm_get_wm_class(xc.c, ifr->focus);
@@ -139,6 +147,7 @@ static uint8_t pokoy()
                     }
                     free(ifr);
                 }
+         
                 if ((flags & FLAG_BLOCK) == 0) {
                     cbreaks[i]->rt = INT_MAX;
                     create_cb(cbreaks[i]);
@@ -156,14 +165,34 @@ static uint8_t pokoy()
                 }
                 flags &= ~FLAG_BLOCK;
             }
-            if (idle_counter > 30) {
-                if (is_idle()) {
+
+            if ( (flags & FLAG_NOTIFY) && (cbreaks[i]->delta == 30) ){
+                 char command[100];
+                 snprintf(command,100,"notify-send -t 15000 \"Break\" \"In 30 sec %.1f min break\"",
+                    (float)cbreaks[i]->du/ONE_MINUTE);
+                 system(command);
+            }
+
+            if ((idle_counter > 5) && (flags & FLAG_WORKRAVE)) {
+                while (is_idle(5)) {
+                    sleep(1);
+                    for (j = 0; j < number_of_breaks; j++) {
+                        if (is_idle(cbreaks[j]->du)) {
+                            reset_rt(cbreaks[j]);
+                        } else {
+                            cbreaks[j]->rt = time(0) + cbreaks[j]->delta + 1; 
+                        }
+                    }
+                    }
+            idle_counter = 0;
+            } else if (idle_counter > 30) {
+                if (is_idle(idle_time)) {
                     syslog(LOG_DEBUG, "It seems that there is nobody. Sleeping.");
-                    while (is_idle()) {
+                    while (is_idle(idle_time)) {
                         sleep(30);
                     }
                     for (j = 0; j < number_of_breaks; j++) {
-                        cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
+                        reset_rt(cbreaks[j]);
                     }
                     syslog(LOG_DEBUG, "Awakening.");
                 }
@@ -200,7 +229,7 @@ static uint8_t pokoy()
                 }
             }
             for (j = 0; j < number_of_breaks; j++) {
-                cbreaks[j]->rt = time(0) + cbreaks[j]->tbb;
+                reset_rt(cbreaks[j]);
             }
             syslog(LOG_DEBUG, "Awakening.");
         }
@@ -210,7 +239,7 @@ static uint8_t pokoy()
     }
 }
 
-uint8_t is_idle()
+uint8_t is_idle(uint32_t duration)
 {
     xcb_screensaver_query_info_cookie_t sqic = xcb_screensaver_query_info(xc.c, xc.s->root);
     xcb_screensaver_query_info_reply_t* sqir = xcb_screensaver_query_info_reply(xc.c, sqic, NULL);
@@ -218,7 +247,13 @@ uint8_t is_idle()
     free(sqir);
 
     syslog(LOG_DEBUG, "Idle time: %d", sec_since_user_input);
-    return (sec_since_user_input > idle_time);
+    return (sec_since_user_input > duration);
+}
+
+void reset_rt(cbreak* cb)
+{
+    cb->rt = time(0) + cb->tbb;
+    cb->delta = cb->tbb;
 }
 
 void add_default_breaks()
@@ -293,6 +328,12 @@ void load_config()
         } else if (strcmp(k, "enable_postpone") == 0) {
             if (strcmp(p, "false") == 0)
                 flags &= ~FLAG_ENABLE_POSTPONE;
+        } else if (strcmp(k, "enable_workrave") == 0) {
+            if (strcmp(p, "true") == 0)
+                flags |= FLAG_WORKRAVE;
+        } else if (strcmp(k, "enable_notify") == 0) {
+            if (strcmp(p, "true") == 0)
+                flags |= FLAG_NOTIFY;
         } else if (strcmp(k, "font") == 0) {
             strcpy(font, p);
         } else if (strcmp(k, "block") == 0) {
@@ -338,7 +379,7 @@ void init_daemon()
     sa.sa_handler = signal_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGUSR1, &sa, NULL) == -1 || sigaction(SIGUSR2, &sa, NULL) == -1 || sigaction(SIGCONT, &sa, NULL) == -1) {
+    if (sigaction(SIGTERM, &sa, NULL) == -1 || sigaction(SIGUSR1, &sa, NULL) == -1 || sigaction(SIGUSR2, &sa, NULL) == -1 || sigaction(SIGCONT, &sa, NULL) == -1 || sigaction(SIGURG, &sa, NULL) == -1) {
         syslog(LOG_ERR, "Cannot change signal action.");
     }
 }
@@ -400,6 +441,8 @@ static void signal_handler(int sig)
     }
     if (sig == SIGCONT)
         is_sleeping ^= 1; // flip
+    if (sig == SIGURG)
+        flags ^= FLAG_WORKRAVE;
     if (sig == SIGTERM)
         exit(0);
 }
@@ -585,7 +628,7 @@ void create_cb(cbreak* cb)
                 usleep(100000); // just to show that bar is complete
                 xcb_destroy_window(xc.c, w);
                 xcb_flush(xc.c);
-                cb->rt = time(0) + cb->tbb;
+                reset_rt(cb);
                 return;
             }
         }
@@ -607,6 +650,7 @@ void create_cb(cbreak* cb)
                             xcb_destroy_window(xc.c, w);
                             xcb_flush(xc.c);
                             cb->rt = time(0) + cb->tbb;
+                            cb->delta = difftime(cb->rt, time(0));
                             free(e);
                             return;
                         }
@@ -649,10 +693,10 @@ int main(int argc, char** argv)
             fread(&pid, 4, 1, fp);
     }
 
-    while ((c = getopt(argc, argv, "hvrc:nskd")) != -1)
+    while ((c = getopt(argc, argv, "hvrc:nskdl")) != -1)
         switch (c) {
         case 'h':
-            printf("%s [-hvrnkds] [-c CONFIG_PATH]\n", NAME);
+            printf("%s [-hvrnkdls] [-c CONFIG_PATH]\n", NAME);
             exit(0);
         case 'v':
             printf("%s\n", VERSION);
@@ -677,6 +721,12 @@ int main(int argc, char** argv)
         case 'k':
             if (pid)
                 kill(pid, SIGTERM);
+            else
+                printf("Daemon is not running.\n");
+            exit(0);
+        case 'l':
+            if (pid)
+                kill(pid, SIGURG);
             else
                 printf("Daemon is not running.\n");
             exit(0);
