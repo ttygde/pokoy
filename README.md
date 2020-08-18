@@ -9,13 +9,13 @@ pokoy is lightweight daemon for X that helps prevent RSI and other computer rela
 - Ubuntu:
 
   ```sh
-  sudo apt-get install cmake extra-cmake-modules asciidoc-base libxcb1-dev libxcb-keysyms1-dev libcxb-icccm4-dev libxcb-screensaver0-dev
+  sudo apt-get install libxcb1-dev libxcb-keysyms1-dev libcxb-icccm4-dev libxcb-screensaver0-dev
   ```
 
 - Arch Linux
 
   ```sh
-  sudo pacman -S cmake extra-cmake-modules asciidoc libxcb xcb-util-keysyms xcb-util-wm
+  sudo pacman -S libxcb xcb-util-keysyms xcb-util-wm
   ```
 
 ### Runtime dependencies
@@ -34,15 +34,13 @@ pokoy is lightweight daemon for X that helps prevent RSI and other computer rela
 
 ## Building and installation
 
-Standard CMake procedure:
+Standard Makefile procedure:
 
 ```sh
-mkdir build
-cmake ..
 sudo make install
 ```
 
-If you'd like to install in other than default directory, then the last step should look like `sudo make DESTDIR=/some/install/base/dir install`.
+If you'd like to install in other than default directory, then the last step should look like `sudo make PREFIX=/some/install/base/dir install`.
 
 ## Examples
 

@@ -1,0 +1,134 @@
+.Dd $Mdocdate: August 20 2020 $
+.Dt POKOY 1
+.Os
+.Sh NAME
+.Nm pokoy
+.Nd Lightweight daemon that helps prevent RSI and other computer related stress
+.Sh SYNOPSIS
+.Nm
+.Op Fl hvrnkd
+.Op Fl c Ar CONFIG_PATH
+.Sh DESCRIPTION
+.Nm
+is a simple daemon for X. It locks the screen and forces you to take regular breaks.
+.Sh OPTIONS
+You can run
+.Nm
+without options to see daemon status.
+.Bl -tag -width Ds
+.It Fl r
+Run daemon.
+.It Fl k
+Kill daemon.
+.It Fl n
+Take break now.
+.It Fl s
+Sleep / wake signal.
+.It Fl d
+Be verbose and print debug information to syslog.
+.It Fl h
+Print the synopsis and exit.
+.It Fl l
+Toggle workrave mode and exit.
+.It Fl v
+Print the version and exit.
+.El
+.Sh CONFIGURATION
+.Pp
+The default configuration file is
+.Em $XDG_CONFIG_HOME/pokoy/pokoyrc .
+.Pp
+An example configuration file is included, usually at
+.Em /usr/share/pokoy/pokoyrc .
+.Sh CONFIGURATION OPTIONS
+.Pp
+Blank lines are ignored.
+.Pp
+Lines beginning with a hash mark ('#') are comments, and ignored.
+.Pp
+%M is minutes (00..59). %S is seconds (00..59).
+.Bl -tag -width 2m
+.It Ic show_bar Ar true/false
+Show progress bar.
+.Pp
+Default:
+.Em true
+.It Ic show_timer Ar true/false
+Show timer.
+.Pp
+Default:
+.Em true
+.It Ic enable_skip Ar true/false
+If set to true, user can press 's' to skip break.
+.Pp
+Default:
+.Em true
+.It Ic enable_postpone Ar true/false
+If set to true, user can press 'p' to postpone break.
+.Pp
+Default:
+.Em true
+.It Ic enable_workrave Ar true/false
+If set to true, pokoy will work in
+.Xr workrave 1
+mode. This means after 5 idle seconds the break timers are paused. If a time of a break passes in this state, the timer resets.
+.Pp
+Default:
+.Em false
+.It Ic enable_notify Ar true/false
+If set to true, pokoy will send desktop notifications about incoming breaks. Requires
+.Xr notify-send 1 .
+.Pp
+Default:
+.Em false
+.It Ic idle_time Ar %M:%S
+If there is no user input for
+.Ar idle_time ,
+the daemon will sleep until user came back. Does not apply in
+.Xr workrave 1
+mode.
+.Pp
+Default:
+.Em 10:00
+.It Ic sleep_time Ar %M:%S
+If daemon receives sleep signal via 
+.Sy -s ,
+it will sleep for
+.Ar idle_time .
+.Pp
+Default:
+.Em 30:00
+.It Ic font Ar font_name
+X11 font. For example: 
+.Ar -*-terminus-*-*-*-*-32-*-*-*-*-*-*-* .
+Use
+.Xr xfontsel 1
+to choose a font.
+.Pp
+Default:
+.Ar fixed
+.It Ic block Ar class_name
+If window with 
+.Ar class_name
+is focused, break will be skipped.
+For example, if you add 'block Mplayer', there will be no breaks until
+.Xr mplayer 1
+loses focus.
+.It Ic break Ar time_between_breaks Ar break_duration Ar postpone_time
+Add break. All values have
+.Ar %M:%S
+form. If postpone time is '00:00', break cannot be postponed.
+.Pp
+Default:
+.Ar (none)
+.El
+.Sh AUTHORS
+.Bl -item -width 3m
+.It
+ttygde <u at airmail.cc>
+.It
+lich <at dataswamp.org>
+.El
+.Sh HOMEPAGE
+.Pp
+https://github.com/ttygde/pokoy
