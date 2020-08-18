@@ -753,9 +753,9 @@ int main(int argc, char** argv)
                 break;
             }
             rt -= time(NULL);
-            if ((rt / (60 * 60)) > 0)
-                printf("%02d:", rt / 60 * 60);
-            printf("%02d:%02d\n", rt / 60, rt % 60);
+            if ((rt / (3600)) > 0)
+                printf("%02d:", rt / 3600);
+            printf("%02d:%02d\n", (rt % 3600)/ 60, rt % 60);
         }
         exit(0);
     } else {
